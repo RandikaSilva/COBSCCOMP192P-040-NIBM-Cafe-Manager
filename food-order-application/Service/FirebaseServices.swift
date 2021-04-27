@@ -124,4 +124,28 @@ class FirebaseService: NSObject {
             }
         }
     }
+    
+    func getAllItems(completion: @escaping (Any)->()){
+        var items:[ItemModels]=[]
+        db.collection("item").getDocuments(){
+            (querySnapshot, err) in
+            if let err = err {
+                completion(500)
+            }else{
+                for document in querySnapshot!.documents {
+                    let itemId=document.data()["itemId"] as! String
+                    let itemName=document.data()["itemName"] as! String
+                    let itemDescription=document.data()["itemDescription"] as! String
+                    let itemThumbnail=document.data()["itemThumbnail"] as! String
+                    let itemPrice=document.data()["itemPrice"] as! Float
+                    let itemDiscount=document.data()["itemDiscount"] as! Float
+                    let isAvailable=document.data()["isAvailable"] as! Bool
+                    let itemCategory=document.data()["category"] as! String
+                    items.append(ItemModels(itemId: itemId, itemName: itemName, itemThumbnail: itemThumbnail, itemDescription: itemDescription, itemPrice: itemPrice,itemDiscount: itemDiscount,isAvailable: isAvailable,category: itemCategory))
+                }
+                populateItemList(items: items)
+                completion(items)
+            }
+        }
+    }
 }

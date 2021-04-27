@@ -78,7 +78,7 @@ class LoginController: UIViewController {
             }else if(result==3){
                 self.showAlert(title: "Oops!", message: "Username or password is incorrect")
             }else if(result==0){
-                self.showAlert(title: "Oops!", message: "An error occures while registering")
+                self.showAlert(title: "Oops!", message: "An error occures while login")
             }
         }
     }
