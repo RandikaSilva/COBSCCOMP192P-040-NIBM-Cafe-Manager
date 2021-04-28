@@ -77,9 +77,9 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
             let itemDescription=self.txtItemDescription.text!
             let category=self.pickerCategory!
             
-            let item:Item=Item(itemId: itemId, itemName: itemName, itemThumbnail: itemThumbnail, itemDescription: itemDescription, itemPrice: itemPrice,itemDiscount:itemDiscount,isAvailable:true, category: category)
+            let item:ItemModels=ItemModels(itemId: itemId, itemName: itemName, itemThumbnail: itemThumbnail, itemDescription: itemDescription, itemPrice: itemPrice,itemDiscount:itemDiscount,isAvailable:true, category: category)
             
-            firestoreDataService().addNewItem(item: item){
+            FirebaseService().addNewItem(item: item){
                 completion in
                 
                 print("New Item Added")
@@ -96,7 +96,7 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
     }
 }
 
-extension MenuViewController: ImagePickerDelegate {
+extension MenuSegmentController: ImagePickerDelegate {
     func didSelect(image: UIImage?) {
         self.imgItemViewer.image = image
         self.pickedImage=image?.pngData()

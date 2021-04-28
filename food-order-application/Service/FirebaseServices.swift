@@ -129,7 +129,7 @@ class FirebaseService: NSObject {
     
     func getAllItems(completion: @escaping (Any)->()){
         var items:[ItemModels]=[]
-        db.collection("item").getDocuments(){
+        db.collection("items").getDocuments(){
             (querySnapshot, err) in
             if let err = err {
                 completion(500)
@@ -245,6 +245,25 @@ class FirebaseService: NSObject {
                 }
             }else{
                 completion("")
+            }
+        }
+    }
+    
+    func addNewItem(item:ItemModels, completion: @escaping (Any)->()){
+        db.collection("items").document(item.itemId).setData([
+            "itemId":item.itemId,
+            "itemName":item.itemName,
+            "itemDescription":item.itemDescription,
+            "itemThumbnail":item.itemThumbnail,
+            "itemPrice":item.itemPrice,
+            "itemDiscount":item.itemDiscount,
+            "isAvailable":item.isAvailable,
+            "category":item.category
+        ]){ err in
+            if err != nil{
+                completion(500)
+            } else {
+                completion(201)
             }
         }
     }

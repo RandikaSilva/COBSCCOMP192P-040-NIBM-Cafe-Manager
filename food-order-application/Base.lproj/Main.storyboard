@@ -1847,7 +1847,7 @@
         <!--Menu Segment Controller-->
         <scene sceneID="goI-Hi-dmA">
             <objects>
-                <viewController storyboardIdentifier="MenuViewController" useStoryboardIdentifierAsRestorationIdentifier="YES" id="ef8-1A-P5C" customClass="MenuSegmentController" customModule="food_order_application" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController restorationIdentifier="MenuSegmentController" storyboardIdentifier="MenuSegmentController" id="ef8-1A-P5C" customClass="MenuSegmentController" customModule="food_order_application" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="u9A-nA-lh9">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

@@ -3,6 +3,7 @@
 pod 'Firebase/Auth'
 pod 'Firebase/Firestore'
 pod 'MaterialComponents/Buttons'
+pod 'Firebase/Storage'
 target 'food-order-application' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
