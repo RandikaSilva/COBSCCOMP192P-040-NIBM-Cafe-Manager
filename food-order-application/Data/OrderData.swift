@@ -10,14 +10,9 @@
 import Foundation
 
 struct OrderData {
-    static var orderId:Int = 1
-    static var orderList:[OrderModel] = []{
-        didSet{
-            orderId+=1
-        }
-    }
+    static var orderList:[OrderModel] = []
 }
 
-func addNewOrder(order:OrderModel){
-    OrderData.orderList.append(order)
+func populateOrderList(orders:[OrderModel]){
+    OrderData.orderList=orders
 }

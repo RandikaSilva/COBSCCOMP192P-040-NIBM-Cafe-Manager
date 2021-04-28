@@ -65,19 +65,19 @@ class StorePageViewController: UIViewController {
     }
     
     @objc func tap(_ sender: Any) {
-        addNewOrder(order: OrderModel(orderId: OrderData.orderId, orderStatus: "Pending"))
-        removeCart()
-        let orderViewController = storyboard?.instantiateViewController(withIdentifier:"OrderView") as? OrderViewController
-        self.navigationController?.pushViewController(orderViewController!, animated: true)
+//        addNewOrder(order: OrderModel(orderId: OrderData.orderId, orderStatus: "Pending"))
+//        removeCart()
+//        let orderViewController = storyboard?.instantiateViewController(withIdentifier:"OrderView") as? OrderViewController
+//        self.navigationController?.pushViewController(orderViewController!, animated: true)
     }
     @IBAction func stpQtyUpdate(_ sender: UIStepper) {
-        let foodId = sender.accessibilityIdentifier
-        for item in CartData.cartList{
-            if(String(item.foodId)==foodId){
-                item.foodQty=Int(sender.value)
-                item.totalPrice=item.foodPrice * Float(item.foodQty)
-            }
-        }
+//        let foodId = sender.accessibilityIdentifier
+//        for item in CartData.cartList{
+//            if(String(item.foodId)==foodId){
+//                item.foodQty=Int(sender.value)
+//                item.totalPrice=item.foodPrice * Float(item.foodQty)
+//            }
+//        }
         cartTableView.reloadData()
     }
     
@@ -85,9 +85,9 @@ class StorePageViewController: UIViewController {
 
 extension StorePageViewController:UITableViewDelegate{
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let foodViewController = storyboard?.instantiateViewController(withIdentifier:"FoodView") as? FoodViewController
-        foodViewController?.foodDetails = FoodData.foodList[indexPath.row]
-        self.navigationController?.pushViewController(foodViewController!, animated: true)
+//        let foodViewController = storyboard?.instantiateViewController(withIdentifier:"FoodView") as? FoodViewController
+//        foodViewController?.foodDetails = FoodData.foodList[indexPath.row]
+//        self.navigationController?.pushViewController(foodViewController!, animated: true)
     }
 }
 
@@ -120,8 +120,8 @@ extension StorePageViewController:UITableViewDataSource{
             return cell
         }else if tableView == cartTableView{
             let cell:CartTableCustomCell =  tableView.dequeueReusableCell(withIdentifier: "tbvCartCell") as! CartTableCustomCell
-            cell.lblCartFoodName.text=CartData.cartList[indexPath.row].foodName
-            cell.stpFoodQty.accessibilityIdentifier=String(CartData.cartList[indexPath.row].foodId)
+            //cell.lblCartFoodName.text=CartData.cartList[indexPath.row].foodName
+            //cell.stpFoodQty.accessibilityIdentifier=String(CartData.cartList[indexPath.row].foodId)
             cell.lblCartFoodPrice.text=String(format:"%.2f", CartData.cartList[indexPath.row].totalPrice)
             cell.layer.backgroundColor = UIColor.clear.cgColor
             cell.layer.shadowColor = UIColor.black.cgColor

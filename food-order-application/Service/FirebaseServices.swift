@@ -8,6 +8,8 @@
 import UIKit;
 import FirebaseAuth;
 import FirebaseFirestore;
+import FirebaseStorage;
+
 
 class FirebaseService: NSObject {
     let db = Firestore.firestore()
@@ -148,4 +150,104 @@ class FirebaseService: NSObject {
             }
         }
     }
+    
+    func getAllCategories(completion: @escaping (Any)->()){
+        db.collection("categories").addSnapshotListener {
+            querySnapshot, error in
+            if let err = error {
+                completion(500)
+            }else{
+                var categories:[CategoryModel]=[]
+                for document in querySnapshot!.documents {
+                    let categoryId=document.data()["categoryId"] as! String
+                    let categoryName=document.data()["categoryName"] as! String
+                    categories.append(CategoryModel(categoryId: categoryId, categoryName: categoryName))
+                }
+                populateCategoryList(categories: categories)
+                completion(categories)
+            }
+        }
+    }
+    
+    func addNewCategory(category:CategoryModel, completion: @escaping (Any)->()){
+        db.collection("categories").document(category.categoryId).setData([
+            "categoryId":category.categoryId,
+            "categoryName":category.categoryName
+        ]){ err in
+            if err != nil{
+                completion(500)
+            } else {
+                completion(201)
+            }
+        }
+    }
+    
+    func getAllOrders(completion: @escaping (Any)->()){
+        db.collection("orders").addSnapshotListener { querySnapshot, error in
+            if let err = error {
+                completion(500)
+            }
+            var orders:[OrderModel] = []
+            for document in querySnapshot!.documents {
+                var cart:[CartModel]=[]
+                let orderId:String=document.data()["orderId"] as! String
+                let userEmailAddress:String=document.data()["userEmailAddress"] as! String
+//                let items = document.data()["items"] as! [Any]
+//                for item in items{
+//                    let itemData = item as! [String:Any]
+//                    let itemId:String = itemData["itemId"] as! String
+//                    let itemName:String = itemData["itemName"] as! String
+//                    let itemQty:Int = itemData["itemQty"] as! Int
+//                    let itemPrice:Float = itemData["itemPrice"] as! Float
+//                    let totalPrice:Float = itemData["totalPrice"] as! Float
+//                    let cartItem = CartModel(itemId: itemId, itemName: itemName, itemQty: itemQty, itemPrice: itemPrice, totalPrice: totalPrice)
+//                    cart.append(cartItem)
+//                }
+                let total:Float=document.data()["total"] as! Float
+                let status:Int=document.data()["status"] as! Int
+                orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status))
+            }
+            populateOrderList(orders: orders)
+            completion(orders)
+        }
+    }
+    
+    func changeOrderStatus(orderId:String, status:Int, completion: @escaping (Any)->()){
+        db.collection("orders").document(orderId).updateData(["status":status]){
+            err in
+            if let err = err {
+                completion(500)
+            } else {
+                //FirebaseService().updateOrderStatus(orderId: orderId, status: status)
+                completion(204)
+            }
+        }
+    }
+    
+    let storage = Storage.storage()
+    
+    func upload(data:Data,itemId:String,completion: @escaping (Any)->()){
+        print("Started to upload")
+        let storageRef = storage.reference()
+        let itemImageRef = storageRef.child(itemId+".jpg")
+
+        itemImageRef.putData(data, metadata: nil) { (metadata, error) in
+            if (error == nil){
+                print("Uploaded")
+                itemImageRef.downloadURL(){
+                    url,error in
+                    if (error == nil){
+                        completion(url?.absoluteString)
+                    }else{
+                        print("Unable to get download url")
+                        completion("")
+                    }
+                }
+            }else{
+                completion("")
+            }
+        }
+    }
 }
+
+
