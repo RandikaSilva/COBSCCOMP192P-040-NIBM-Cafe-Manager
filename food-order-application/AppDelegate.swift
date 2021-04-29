@@ -7,15 +7,23 @@
 
 import UIKit;
 import Firebase;
+import CoreLocation
+
 
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate,CLLocationManagerDelegate {
 
-
+    let locationManager = CLLocationManager()
+    let locationService = LocationService()
+    let notificationService = NotificationService()
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         FirebaseApp.configure()
+        self.locationService.configure(context: self,locationManager: self.locationManager)
+        self.notificationService.configure(context: self,application:application)
+        UserData.emailAddress="mlasitharandika@gmail.com"
+        UserData.mobileNumber="0776931460"
         return true
     }
 
@@ -34,4 +42,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
 
+}
+extension AppDelegate: UNUserNotificationCenterDelegate {
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        print(response.notification.request.content.userInfo)
+        completionHandler()
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.alert, .badge, .sound])
+    }
 }

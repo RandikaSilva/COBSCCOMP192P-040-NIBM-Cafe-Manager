@@ -13,19 +13,20 @@ class CategoryTableViewCells: UITableViewCell {
 
 class CategorSegmentController: UIViewController {
 
-    @IBOutlet weak var txtCategory: UITextField!
-    @IBOutlet weak var tblCategory: UITableView!
-    @IBOutlet weak var addCategoryBtn: UIButton!
+    @IBOutlet weak var CategoryTxt: UITextField!
+    
+    @IBOutlet weak var CategoryTbl: UITableView!
+    @IBOutlet weak var CategoryAdd: UIButton!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.addCategoryBtn.addTarget(self, action: #selector(self.addNewCategory(sender:)), for: .touchUpInside)
-        FirebaseService().getAllCategories(){
+        self.CategoryAdd.addTarget(self, action: #selector(self.addNewCategory(sender:)), for: .touchUpInside)
+        FirebaseService().GetCategoryAll(){
             completion in
-            self.tblCategory.delegate=self
-            self.tblCategory.dataSource=self
-            self.tblCategory.reloadData()
+            self.CategoryTbl.delegate=self
+            self.CategoryTbl.dataSource=self
+            self.CategoryTbl.reloadData()
             
         }
         
@@ -38,14 +39,14 @@ class CategorSegmentController: UIViewController {
     }
     
     @objc func addNewCategory(sender:UIButton){
-        print("234")
+        
         let categoryId = NSUUID().uuidString.replacingOccurrences(of:"-", with: "")
-        let categoryName = self.txtCategory.text as! String
+        let categoryName = self.CategoryTxt.text as! String
         let category:CategoryModel = CategoryModel(categoryId:categoryId, categoryName:categoryName)
-        FirebaseService().addNewCategory(category: category){
+        FirebaseService().AddCategoryNew(category: category){
             completion in
             print("Category Added")
-            self.tblCategory.reloadData()
+            self.CategoryTbl.reloadData()
         }
     }
 }

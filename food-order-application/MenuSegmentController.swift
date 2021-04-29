@@ -26,7 +26,7 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
         self.pkrCategory.dataSource = self
         self.btnAddItem.addTarget(self, action: #selector(self.addNewItem(sender:)), for: .touchUpInside)
         
-        FirebaseService().getAllCategories(){
+        FirebaseService().GetCategoryAll(){
             completion in
             self.makePickerData(){
                 completion in

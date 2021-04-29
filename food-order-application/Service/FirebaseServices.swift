@@ -9,6 +9,7 @@ import UIKit;
 import FirebaseAuth;
 import FirebaseFirestore;
 import FirebaseStorage;
+import FirebaseDatabase;
 
 
 class FirebaseService: NSObject {
@@ -151,7 +152,7 @@ class FirebaseService: NSObject {
         }
     }
     
-    func getAllCategories(completion: @escaping (Any)->()){
+    func GetCategoryAll(completion: @escaping (Any)->()){
         db.collection("categories").addSnapshotListener {
             querySnapshot, error in
             if let err = error {
@@ -169,7 +170,7 @@ class FirebaseService: NSObject {
         }
     }
     
-    func addNewCategory(category:CategoryModel, completion: @escaping (Any)->()){
+    func AddCategoryNew(category:CategoryModel, completion: @escaping (Any)->()){
         db.collection("categories").document(category.categoryId).setData([
             "categoryId":category.categoryId,
             "categoryName":category.categoryName
@@ -192,17 +193,17 @@ class FirebaseService: NSObject {
                 var cart:[CartModel]=[]
                 let orderId:String=document.data()["orderId"] as! String
                 let userEmailAddress:String=document.data()["userEmailAddress"] as! String
-//                let items = document.data()["items"] as! [Any]
-//                for item in items{
-//                    let itemData = item as! [String:Any]
-//                    let itemId:String = itemData["itemId"] as! String
-//                    let itemName:String = itemData["itemName"] as! String
-//                    let itemQty:Int = itemData["itemQty"] as! Int
-//                    let itemPrice:Float = itemData["itemPrice"] as! Float
-//                    let totalPrice:Float = itemData["totalPrice"] as! Float
-//                    let cartItem = CartModel(itemId: itemId, itemName: itemName, itemQty: itemQty, itemPrice: itemPrice, totalPrice: totalPrice)
-//                    cart.append(cartItem)
-//                }
+                let items = document.data()["items"] as! [Any]
+                for item in items{
+                    let itemData = item as! [String:Any]
+                    let itemId:String = itemData["itemId"] as! String
+                    let itemName:String = itemData["itemName"] as! String
+                    let itemQty:Int = itemData["itemQty"] as! Int
+                    let itemPrice:Float = itemData["itemPrice"] as! Float
+                    let totalPrice:Float = itemData["totalPrice"] as! Float
+                    let cartItem = CartModel(itemId: itemId, itemName: itemName, itemQty: itemQty, itemPrice: itemPrice, totalPrice: totalPrice)
+                    cart.append(cartItem)
+                }
                 let total:Float=document.data()["total"] as! Float
                 let status:Int=document.data()["status"] as! Int
                 orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status))
@@ -210,6 +211,40 @@ class FirebaseService: NSObject {
             populateOrderList(orders: orders)
             completion(orders)
         }
+    }
+    
+    let notificationService = NotificationService()
+    func listenToOrderStatus(){
+        let ref = Database.database().reference().child(UserData.mobileNumber)
+        ref.observe(DataEventType.value, with: { (snapshot) in
+            
+            if !snapshot.exists() {
+                    return
+            }
+            var data = snapshot.value as! [String: Any]
+            for (key,value) in data{
+                let statusData = value as! [String:Any]
+                var orderStatusData:StatusData=StatusData()
+                orderStatusData.orderId=statusData["orderId"] as! String
+                orderStatusData.status=statusData["status"] as! Int
+                orderStatusData.isRecieved=statusData["isRecieved"] as! Bool
+                if orderStatusData.status == 0 || orderStatusData.status == 3{
+                    if orderStatusData.isRecieved == false{
+                        self.notificationService.pushNotification(orderId: orderStatusData.orderId, orderStatus: orderStatusData.status){
+                            result in
+                            if result == true{
+                                self.markStatusAsRecieved(orderStatusData: orderStatusData,key: key)
+                            }
+                        }
+                    }
+                }
+            }
+        })
+    }
+    
+    func markStatusAsRecieved(orderStatusData:StatusData,key:String){
+        orderStatusData.isRecieved=true
+        let ref = Database.database().reference().child(UserData.mobileNumber).child(key).setValue(orderStatusData.asDictionary)
     }
     
     func changeOrderStatus(orderId:String, status:Int, completion: @escaping (Any)->()){
@@ -264,6 +299,40 @@ class FirebaseService: NSObject {
                 completion(500)
             } else {
                 completion(201)
+            }
+        }
+    }
+    
+    func getOrdersByDateRange(start:Date,end:Date,completion: @escaping (Any)->()){
+        var orders:[OrderModel] = []
+        db.collection("orders").whereField("timestamp",isGreaterThanOrEqualTo: end).whereField("timestamp", isLessThanOrEqualTo: start).getDocuments(){
+            (querySnapshot, err) in
+            if let err = err {
+                completion(500)
+            }else{
+                for document in querySnapshot!.documents {
+                    var cart:[CartModel]=[]
+                    let orderId:String=document.data()["orderId"] as! String
+                    let userEmailAddress:String=document.data()["userEmailAddress"] as! String
+                    let items = document.data()["items"] as! [Any]
+                    for item in items{
+                        let itemData = item as! [String:Any]
+                        let itemId:String = itemData["itemId"] as! String
+                        let itemName:String = itemData["itemName"] as! String
+                        let itemQty:Int = itemData["itemQty"] as! Int
+                        let itemPrice:Float = itemData["itemPrice"] as! Float
+                        let totalPrice:Float = itemData["totalPrice"] as! Float
+                        let cartItem = CartModel(itemId: itemId, itemName: itemName, itemQty: itemQty, itemPrice: itemPrice, totalPrice: totalPrice)
+                        cart.append(cartItem)
+                    }
+                    let total:Float=document.data()[
+                        "total"] as! Float
+                    let status:Int=document.data()["status"] as! Int
+                    let timestamp:Timestamp = document.data()["timestamp"] as! Timestamp
+                    orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status,timestamp:timestamp.dateValue()))
+                }
+                populateBillOrderList(orders: orders)
+                completion(orders)
             }
         }
     }
