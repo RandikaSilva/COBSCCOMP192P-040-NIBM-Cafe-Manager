@@ -119,8 +119,10 @@ extension OrderController:UITableViewDataSource{
             cell.btnReject.tag=indexPath.row
             cell.btnAccept.backgroundColor=UIColor.systemGreen
             cell.btnAccept.setTitle("Accept", for: .normal)
-            cell.btnAccept.accessibilityIdentifier=orderObjectsArray[indexPath.section].sectionObjects[indexPath.row].orderId
+            cell.btnAccept.accessibilityIdentifier=orderObjectsArray[indexPath.section].sectionObjects[indexPath.row].orderId+"_"+orderObjectsArray[indexPath.section].sectionObjects[indexPath.row].userId
             cell.btnAccept.addTarget(self, action: #selector(self.acceptOrder(sender:)), for: .touchUpInside)
+            cell.btnReject.addTarget(self, action: #selector(self.rejectOrder(sender:)), for: .touchUpInside)
+            cell.btnReject.accessibilityIdentifier=orderObjectsArray[indexPath.section].sectionObjects[indexPath.row].orderId+"_"+orderObjectsArray[indexPath.section].sectionObjects[indexPath.row].userId
         }else{
             cell.btnReject.isHidden=true
             cell.btnAccept.backgroundColor=UIColor.systemYellow
@@ -139,8 +141,19 @@ extension OrderController:UITableViewDataSource{
     }
     
     @objc func acceptOrder(sender:UIButton){
-        let orderId = sender.accessibilityIdentifier!
-        FirebaseService().changeOrderStatus(orderId: orderId, status: 1){
+        let orderId = String(sender.accessibilityIdentifier!.split(separator: "_").first!)
+        let userId = String(sender.accessibilityIdentifier!.split(separator: "_").last!)
+        print("------_>")
+        print(orderId)
+        print(userId)
+        FirebaseService().changeOrderStatus(orderId: orderId, userId: userId, status: 1){
+            completion in
+        }
+    }
+    @objc func rejectOrder(sender:UIButton){
+        let orderId = String(sender.accessibilityIdentifier!.split(separator: "_").first!)
+        let userId = String(sender.accessibilityIdentifier!.split(separator: "_").last!)
+        FirebaseService().changeOrderStatus(orderId: orderId,userId: userId , status: 5){
             completion in
         }
     }

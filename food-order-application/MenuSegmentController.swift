@@ -18,7 +18,10 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
     @IBOutlet weak var txtItemName: UITextField!
     @IBOutlet weak var txtItemPrice: UITextField!
     @IBOutlet weak var txtItemDiscount: UITextField!
-    @IBOutlet weak var txtItemDescription: UITextField!
+    
+    @IBOutlet weak var tglItemAvailability: UISwitch!
+    
+    @IBOutlet weak var txtItemDescription: UITextView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -64,6 +67,16 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
         self.imagePicker.present(from: self.view)
     }
     
+    private func clearData(){
+        self.imgItemViewer.image=UIImage(named: "Defualt Image")
+        self.txtItemName.text=nil
+        self.txtItemPrice.text="0.0"
+        self.txtItemDiscount.text="0.0"
+        self.txtItemDescription.text="Item Description"
+        self.btnAddItem.isEnabled=true
+    }
+    
+    
     @objc func addNewItem(sender:UIButton){
         let itemId=NSUUID().uuidString.replacingOccurrences(of:"-", with: "")
         
@@ -82,9 +95,23 @@ class MenuSegmentController:  UIViewController, UIPickerViewDelegate, UIPickerVi
             FirebaseService().addNewItem(item: item){
                 completion in
                 
-                print("New Item Added")
+                let result = completion as! Int
+                if result==201{
+                    self.showAlert(title: "Success", message: "Successfully added")
+                    self.clearData()
+                }else{
+                    self.showAlert(title: "Firestore Error", message: "Error Transaction")
+                }
+             
+                
             }
         }
+    }
+    
+    func showAlert(title:String,message:String){
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
     
     private func makePickerData(completion: @escaping (Any)->()){

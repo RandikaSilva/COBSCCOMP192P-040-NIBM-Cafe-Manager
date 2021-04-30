@@ -72,7 +72,13 @@ class OrderDetailController: UIViewController {
     }
     
     @objc func markAsDone(sender:UIButton){
-        FirebaseService().changeOrderStatus(orderId: orderDetails.orderId, status: 2){
+        let newStatus:Int!
+        if orderDetails.status==1{
+            newStatus=2
+        }else{
+            newStatus=4
+        }
+        FirebaseService().changeOrderStatus(orderId: orderDetails.orderId,userId: orderDetails.userId, status: newStatus){
             completion in
             
             let result = completion as! Int

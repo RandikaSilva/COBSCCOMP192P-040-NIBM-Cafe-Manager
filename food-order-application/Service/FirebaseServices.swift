@@ -15,41 +15,127 @@ import FirebaseDatabase;
 class FirebaseService: NSObject {
     let db = Firestore.firestore()
     
-    func registerUser(emailAddress:String,mobileNumber:String,password:String,result: @escaping (_ authResult: Int?)->Void){
-        Auth.auth().createUser(withEmail: emailAddress, password: password) { (response, error) in
-            if error != nil {
-                if let errCode = FirebaseAuth.AuthErrorCode(rawValue: error!._code) {
-                    switch errCode {
-                        case .emailAlreadyInUse:
-                            result(2)
-                        default:
-                            result(0)
+    func registerUser(user:UserModel,result: @escaping (_ authResult: Int?)->Void){
+        if (user.emailAddress != "" && user.mobileNumber != "" && user.password != ""){
+            Auth.auth().createUser(withEmail: user.emailAddress, password: user.password) { (response, error) in
+                if error != nil {
+                    if let errCode = FirebaseAuth.AuthErrorCode(rawValue: error!._code) {
+                        switch errCode {
+                            case .emailAlreadyInUse:
+                                result(409)
+                            default:
+                                result(500)
+                        }
+                    }else{
+                        result(500)
+                    }
+                }else {
+                    FirebaseService().addUserToFirestore(user: user){
+                        completion in
+                        if (completion != nil){
+                            user.uuid=(response?.user.uid)!
+                            
+                            UserDefaults.standard.set(true, forKey: "isLogged")
+                            UserDefaults.standard.set(user.emailAddress, forKey: "emailAddress")
+                            UserDefaults.standard.set(user.mobileNumber, forKey: "mobileNumber")
+                            UserDefaults.standard.set(response?.user.uid, forKey: "uuid")
+                            
+                            UserData.emailAddress=user.emailAddress
+                            UserData.mobileNumber=user.mobileNumber
+                            UserData.uuid=(response?.user.uid)!
+                            result(201)
+                        }else{
+                            result(500)
+                        }
                     }
                 }
-            }else {
-                result(1)
             }
+        }else{
+            result(400)
         }
     }
-    func loginUser(emailAddress:String,password:String,result: @escaping (_ authResult: Int?)->Void){
-        Auth.auth().signIn(withEmail: emailAddress, password: password) { (response, error) in
-            if error != nil {
-                if let errCode = FirebaseAuth.AuthErrorCode(rawValue: error!._code) {
-                    switch errCode {
-                        case .invalidCredential:
-                            result(3)
-                        case .emailAlreadyInUse:
-                            result(2)
-                        default:
-                            result(0)
-                    }
-                }
-            }else {
-                result(1)
+    
+    func addUserToFirestore(user:UserModel,result: @escaping (_ authResult: Int?)->Void){
+        let ref = db.collection("users")
+        ref.document(user.emailAddress).setData([
+            "emailAddress": user.emailAddress,
+            "mobileNumber": user.mobileNumber,
+            "type":user.type
+        ]) { err in
+            if err != nil{
+                result(500)
+            } else {
+                result(201)
             }
         }
     }
     
+    func deleteCategory(categoryId:String)->Bool{
+        do{
+            db.collection("categories").document(categoryId).delete()
+            return true
+        } catch{
+            return false
+        }
+    }
+    
+    
+    func login(user:UserModel,result: @escaping (_ authResult: Int?)->Void){
+        if (user.emailAddress != "" && user.password != ""){
+            Auth.auth().signIn(withEmail: user.emailAddress, password: user.password) { (response, error) in
+                print(error)
+                if error != nil {
+                    if let errCode = FirebaseAuth.AuthErrorCode(rawValue: error!._code) {
+                        switch errCode {
+                            case .wrongPassword:
+                                result(401)
+                            case .invalidCredential:
+                                result(401)
+                            case .emailAlreadyInUse:
+                                result(409)
+                            case .userNotFound:
+                                result(401)
+                            case .invalidEmail:
+                                result(401)
+                            default:
+                                result(500)
+                        }
+                    }else{
+                        result(500)
+                    }
+                }else {
+                    UserDefaults.standard.set(true, forKey: "isLogged")
+                    UserDefaults.standard.set(user.emailAddress, forKey: "emailAddress")
+                    UserDefaults.standard.set(response?.user.uid, forKey: "uuid")
+                    UserData.emailAddress=user.emailAddress
+                    UserData.uuid=(response?.user.uid)!
+                    
+                    result(200)
+                }
+            }
+        }else{
+            result(400)
+        }
+    }
+    
+    
+    func fetchUser(user:UserModel,completion: @escaping (Any)->()){
+        let docRef = db.collection("users").document(user.emailAddress)
+        docRef.getDocument { (document, error) in
+            if let document = document, document.exists {
+                let user = UserModel()
+                user.emailAddress=document.get("emailAddress") as! String
+                user.mobileNumber=document.get("mobileNumber") as! String
+                user.type=document.get("type") as! Int
+                
+                UserDefaults.standard.set(user.mobileNumber, forKey: "mobileNumber")
+                UserData.mobileNumber=user.mobileNumber
+                completion(user)
+            } else {
+                completion(404)
+            }
+        }
+    }
     
     
     func forgetPassword(emailAddress:String,result: @escaping (_ authResult: Int?)->Void){
@@ -204,9 +290,12 @@ class FirebaseService: NSObject {
                     let cartItem = CartModel(itemId: itemId, itemName: itemName, itemQty: itemQty, itemPrice: itemPrice, totalPrice: totalPrice)
                     cart.append(cartItem)
                 }
-                let total:Float=document.data()["total"] as! Float
+                let total:Float=document.data()[
+                    "total"] as! Float
                 let status:Int=document.data()["status"] as! Int
-                orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status))
+                let timestamp:Timestamp = document.data()["timestamp"] as! Timestamp
+                let userId:String = document.data()["userId"] as! String
+                orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status,userId: userId, timestamp:timestamp.dateValue()))
             }
             populateOrderList(orders: orders)
             completion(orders)
@@ -214,26 +303,46 @@ class FirebaseService: NSObject {
     }
     
     let notificationService = NotificationService()
+    
+    func markStatusAsRecieved(orderStatusData:StatusData,key:String){
+        orderStatusData.isRecieved=true
+        let ref = Database.database().reference().child(UserData.uuid).child(key).setValue(orderStatusData.asDictionary)
+    }
+    
+    func changeOrderStatus(orderId:String,userId:String,status:Int, completion: @escaping (Any)->()){
+        db.collection("orders").document(orderId).updateData(["status":status]){
+            err in
+            if let err = err {
+                completion(500)
+            } else {
+                FirebaseService().updateOrderStatus(orderId: orderId, status: status,userId: userId)
+                completion(204)
+            }
+        }
+    }
+    
     func listenToOrderStatus(){
-        let ref = Database.database().reference().child(UserData.mobileNumber)
+        let ref = Database.database().reference().child("orders")
         ref.observe(DataEventType.value, with: { (snapshot) in
             
             if !snapshot.exists() {
                     return
             }
-            var data = snapshot.value as! [String: Any]
-            for (key,value) in data{
-                let statusData = value as! [String:Any]
-                var orderStatusData:StatusData=StatusData()
-                orderStatusData.orderId=statusData["orderId"] as! String
-                orderStatusData.status=statusData["status"] as! Int
-                orderStatusData.isRecieved=statusData["isRecieved"] as! Bool
-                if orderStatusData.status == 0 || orderStatusData.status == 3{
-                    if orderStatusData.isRecieved == false{
-                        self.notificationService.pushNotification(orderId: orderStatusData.orderId, orderStatus: orderStatusData.status){
-                            result in
-                            if result == true{
-                                self.markStatusAsRecieved(orderStatusData: orderStatusData,key: key)
+            var masterData = snapshot.value as! [String: [String:Any]]
+            for (userId,value) in masterData{
+                for (orderId,value) in value{
+                    let statusData = value as! [String:Any]
+                    var orderStatusData:StatusData=StatusData()
+                    orderStatusData.orderId=statusData["orderId"] as! String
+                    orderStatusData.status=statusData["status"] as! Int
+                    orderStatusData.isRecieved=statusData["isRecieved"] as! Bool
+                    if orderStatusData.status == 0 || orderStatusData.status == 3{
+                        if orderStatusData.isRecieved == false{
+                            self.notificationService.pushNotification(orderId: orderStatusData.orderId, orderStatus: orderStatusData.status){
+                                result in
+                                if result == true{
+                                    self.markStatusAsRecieved(orderStatusData: orderStatusData, userId:userId, key: orderId)
+                                }
                             }
                         }
                     }
@@ -242,21 +351,14 @@ class FirebaseService: NSObject {
         })
     }
     
-    func markStatusAsRecieved(orderStatusData:StatusData,key:String){
-        orderStatusData.isRecieved=true
-        let ref = Database.database().reference().child(UserData.mobileNumber).child(key).setValue(orderStatusData.asDictionary)
+    func updateOrderStatus(orderId:String,status:Int,userId:String){
+        let ref = Database.database().reference().child("orders").child(userId).child(orderId)
+        ref.updateChildValues(["status":status,"isRecieved":false])
     }
     
-    func changeOrderStatus(orderId:String, status:Int, completion: @escaping (Any)->()){
-        db.collection("orders").document(orderId).updateData(["status":status]){
-            err in
-            if let err = err {
-                completion(500)
-            } else {
-                //FirebaseService().updateOrderStatus(orderId: orderId, status: status)
-                completion(204)
-            }
-        }
+    func markStatusAsRecieved(orderStatusData:StatusData,userId:String,key:String){
+        orderStatusData.isRecieved=true
+        let ref = Database.database().reference().child("orders").child(userId).child(key).setValue(orderStatusData.asDictionary)
     }
     
     let storage = Storage.storage()
@@ -329,7 +431,8 @@ class FirebaseService: NSObject {
                         "total"] as! Float
                     let status:Int=document.data()["status"] as! Int
                     let timestamp:Timestamp = document.data()["timestamp"] as! Timestamp
-                    orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status,timestamp:timestamp.dateValue()))
+                    let userId:String = document.data()["userId"] as! String
+                    orders.append(OrderModel(orderId: orderId, userEmailAddress: userEmailAddress, items: cart, total: total, status: status,userId: userId, timestamp:timestamp.dateValue()))
                 }
                 populateBillOrderList(orders: orders)
                 completion(orders)

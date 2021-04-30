@@ -12,9 +12,11 @@ var firebaseUserData=FirebaseService()
 struct UserData {
     static var emailAddress:String = ""
     static var mobileNumber:String = ""
+    static var uuid:String = ""
 }
 
 func setUserData(user:UserModel){
     UserData.emailAddress=user.emailAddress
     UserData.mobileNumber=user.mobileNumber
+    UserData.uuid=user.uuid
 }

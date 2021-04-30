@@ -18,14 +18,16 @@ class OrderModel: NSObject {
     var total:Float
     var status:Int
     var timestamp:Date
+    var userId:String
     
-    init(orderId:String,userEmailAddress:String,items:[CartModel],total:Float,status:Int,timestamp:Date=Date()) {
+    init(orderId:String,userEmailAddress:String,items:[CartModel],total:Float,status:Int,userId:String,timestamp:Date=Date()) {
         self.orderId=orderId
         self.userEmailAddress=userEmailAddress
         self.items=items
         self.total=total
         self.status=status
         self.timestamp=timestamp
+        self.userId=userId
     }
 }
 
@@ -43,3 +45,4 @@ class StatusData: NSObject {
         return dict
       }
 }
+

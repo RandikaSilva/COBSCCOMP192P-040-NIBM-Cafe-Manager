@@ -28,7 +28,7 @@ class ForgetPasswordViewController: UIViewController {
             }else if(result==2){
                 self.showAlert(title: "Oops!", message: "Email is already registered")
             }else if(result==0){
-                self.showAlert(title: "Oops!", message: "An error occures while registering")
+                self.showAlert(title: "Oops!", message: "An error occures while forget password")
             }
         }
     }

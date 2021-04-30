@@ -50,35 +50,35 @@ class LoginController: UIViewController {
     }
     
     func login(){
-        self.firebaseService.loginUser(emailAddress:txtEmailAddress.text!,password: txtPassword.text!)
-        {(result:Int?)->Void in
-            if(result==1){
-                UserData.emailAddress=self.txtEmailAddress.text!
-                firebaseFoodData.fetchFoodsData()
-                { (resultFetch) -> () in
-                    if(resultFetch){
-                        firebaseFoodData.fetchUsersData(){
-                            (resultFetch) -> () in
-                            if(resultFetch){
-                                let storeTabBarController = self.storyboard?.instantiateViewController(withIdentifier:"StoreTabBarController") as? StoreTabBarController
-                                self.navigationController?.setNavigationBarHidden(true, animated: false)
-                                self.navigationItem.leftBarButtonItem=nil
-                                self.navigationItem.hidesBackButton=true
-                                self.navigationController?.pushViewController(storeTabBarController!,animated: true)
-                            }else{
-                                self.showAlert(title:"Oops!",message:"Unable to load user data from server")
-                            }
+        let user = UserModel(emailAddress: txtEmailAddress.text!, password: txtPassword.text!)
+        FirebaseService().login(user: user) {
+            result in
+            if result == 200{
+                FirebaseService().fetchUser(user: user){
+                    completion in
+                    print(completion)
+                    if completion is UserModel{
+                        let user = completion as! UserModel
+                        if user.type==1{
+                            FirebaseService().listenToOrderStatus()
+                            let storeTabBarController = self.storyboard?.instantiateViewController(withIdentifier:"StoreTabBarController") as? StoreTabBarController
+                            self.navigationController?.setNavigationBarHidden(true, animated: false)
+                            self.navigationItem.leftBarButtonItem=nil
+                            self.navigationItem.hidesBackButton=true
+                            self.navigationController?.pushViewController(storeTabBarController!,animated: true)
+                        }else{
+                            self.showAlert(title: "Oops!", message: "You are unauthorized")
                         }
                     }else{
-                        self.showAlert(title:"Oops!",message:"Unable to load food data from server")
+                        self.showAlert(title: "Firestore Error", message: "Unable to fetch user data")
                     }
                 }
-            }else if(result==2){
-                self.showAlert(title: "Oops!", message: "Email is already registered")
-            }else if(result==3){
+            }else if(result==400){
+                self.showAlert(title: "Oops!", message: "Email address and password is required")
+            }else if(result==401){
                 self.showAlert(title: "Oops!", message: "Username or password is incorrect")
-            }else if(result==0){
-                self.showAlert(title: "Oops!", message: "An error occures while login")
+            }else if(result==500){
+                self.showAlert(title: "Oops!", message: "An error occures while logging")
             }
         }
     }

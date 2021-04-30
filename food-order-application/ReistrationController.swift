@@ -71,30 +71,20 @@ class RegistrationController: UIViewController {
     
     func register(){
         
-        
-        self.firebaseService.registerUser(emailAddress:txtEmailAddress.text!, mobileNumber: txtMobileNumber.text!, password: txtPassword.text!)
-        {(result:Int?)->Void in
-            if(result==1){
-                firebaseFoodData.fetchFoodsData()
-                { (resultFetch) -> () in
-                    if(resultFetch){
-                        self.firebaseService.addUserToFirestore(user: UserModel(emailAddress: self.txtEmailAddress.text!, mobileNumber: self.txtMobileNumber.text!))
-                        UserData.emailAddress=self.txtEmailAddress.text!
-                        UserData.mobileNumber=self.txtMobileNumber.text!
-                        let storeTabBarController = self.storyboard?.instantiateViewController(withIdentifier:"StoreTabBarController") as? StoreTabBarController
-                        self.navigationController?.setNavigationBarHidden(true, animated: false)
-                        self.navigationItem.leftBarButtonItem=nil
-                        self.navigationItem.hidesBackButton=true
-                        self.navigationController?.pushViewController(storeTabBarController!,animated: true)
-                    }else{
-                        self.showAlert(title:"Oops!",message:"Unable to load food data from server")
-                    }
-                }
-            }else if(result==2){
-                self.showAlert(title: "Oops!", message: "Email is already registered")
-            }else if(result==0){
-                self.showAlert(title: "Oops!", message: "An error occures while registering")
-            }
+    let user = UserModel(emailAddress: txtEmailAddress.text!, mobileNumber: txtMobileNumber.text!, password: txtPassword.text!, type: 1)
+    FirebaseService().registerUser(user: user){
+        (result:Int?)->Void in
+        if(result==201){
+            let storeTabBarController = self.storyboard?.instantiateViewController(withIdentifier:"StoreTabBarController") as? StoreTabBarController
+            self.navigationController?.setNavigationBarHidden(true, animated: false)
+            self.navigationItem.leftBarButtonItem=nil
+            self.navigationItem.hidesBackButton=true
+            self.navigationController?.pushViewController(storeTabBarController!,animated: true)
+        }else if(result==409){
+            self.showAlert(title: "Oops!", message: "Email is already registered")
+        }else if(result==500){
+            self.showAlert(title: "Oops!", message: "An error occures while registering")
         }
     }
+}
 }

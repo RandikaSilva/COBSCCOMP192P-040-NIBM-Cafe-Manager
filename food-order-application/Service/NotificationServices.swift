@@ -45,7 +45,7 @@ class NotificationService: NSObject {
             print(error?.localizedDescription ?? "some unknown error")
             completion(false)
         }
-            print("Notification Register Success")
+         
             completion(true)
         }
     }
@@ -54,8 +54,8 @@ class NotificationService: NSObject {
         print("Setting push notification")
         switch orderStatus {
             case 0:
-                print("New order request")
-                self.registerNotification(title: "Alert", subtitle: "Order", body: "New order request", time: 1.0, isRepeat: false, orderId: orderId){completion in
+         
+                self.registerNotification(title: "Alert", subtitle: "Order", body: "New order receved", time: 1.0, isRepeat: false, orderId: orderId){completion in
                     if completion==true{
                         result(true)
                     }else{
@@ -63,8 +63,8 @@ class NotificationService: NSObject {
                     }
                 }
             case 3:
-                print("Customer is nearby the resturent.. Please hand over the food")
-                self.registerNotification(title: "Alert", subtitle: "Order", body: "Customer is nearby the resturent.. Please hand over the food", time: 1.0, isRepeat: false, orderId: orderId){completion in
+     
+                self.registerNotification(title: "Alert", subtitle: "Order", body: "Customer is nearby the resturent..", time: 1.0, isRepeat: false, orderId: orderId){completion in
                     if completion==true{
                         result(true)
                     }else{

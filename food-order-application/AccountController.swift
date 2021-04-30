@@ -38,6 +38,7 @@ class AccountController: UIViewController {
     @IBOutlet weak var btnPrintHistory: UIButton!
     @IBOutlet weak var lblTotal: UILabel!
     @IBOutlet weak var tblBill: UITableView!
+    @IBOutlet weak var Logout: UIButton!
     
     @IBAction func pkrStartDate(sender: UIDatePicker) {
         self.startDate=sender.date
@@ -50,9 +51,23 @@ class AccountController: UIViewController {
         self.pkrStartDate.minimumDate=self.endDate
         FirebaseService().getOrdersByDateRange(start: self.startDate, end:self.endDate ){
             completion in
-            self.makeDateArray(isFilter: true)
-            self.tblBill.reloadData()
+            if completion is [OrderModel]{
+                self.makeDateArray(isFilter: true)
+                self.tblBill.reloadData()
+            }else{
+                self.showAlertDetails(title: "Error", message: "Unable to fetch filtered data")
+            }
         }
+    }
+    
+    
+    @objc func logout(sender:UIButton){
+        UserDefaults.standard.set(false, forKey: "isLogged")
+        let storeTabBarController = self.storyboard?.instantiateViewController(withIdentifier:"LoginView") as? LoginController
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
+        self.navigationItem.leftBarButtonItem=nil
+        self.navigationItem.hidesBackButton=true
+        self.navigationController?.pushViewController(storeTabBarController!,animated: true)
     }
     
     override func viewDidLoad() {
@@ -60,12 +75,19 @@ class AccountController: UIViewController {
         
         FirebaseService().getAllOrders(){
             completion in
-            self.makeDateArray(isFilter: false)
-            self.tblBill.delegate=self
-            self.tblBill.dataSource=self
-            self.pkrEndDate.isHidden=true
-            self.tblBill.reloadData()
+            
+            if completion is [OrderModel]{
+                self.makeDateArray(isFilter: false)
+                self.tblBill.delegate=self
+                self.tblBill.dataSource=self
+                self.pkrEndDate.isHidden=true
+                self.tblBill.reloadData()
+            }else{
+                self.showAlertDetails(title: "Error", message: "Unable to fetch")
+            }
         }
+        
+        self.Logout.addTarget(self, action: #selector(self.logout(sender:)), for: .touchUpInside)
         
     }
 
@@ -133,7 +155,9 @@ extension AccountController:UITableViewDataSource{
         header.textLabel?.textColor = UIColor.white
     }
     
- 
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return objectsBillArray.count
+    }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if(objectsBillArray[indexPath.section].sectionObjects[indexPath.row] is OrderModel){

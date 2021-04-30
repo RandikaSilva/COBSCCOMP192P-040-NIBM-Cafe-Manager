@@ -38,16 +38,39 @@ class CategorSegmentController: UIViewController {
         
     }
     
+    private func clearData(){
+       
+        self.CategoryTxt.text=nil
+    }
+    
     @objc func addNewCategory(sender:UIButton){
+        if self.CategoryTxt.text == ""{
+            self.showAlert(title: "Invalid input", message: "Please fill data")
+            return
+        }
         
         let categoryId = NSUUID().uuidString.replacingOccurrences(of:"-", with: "")
         let categoryName = self.CategoryTxt.text as! String
         let category:CategoryModel = CategoryModel(categoryId:categoryId, categoryName:categoryName)
         FirebaseService().AddCategoryNew(category: category){
             completion in
-            print("Category Added")
+            let result = completion as! Int
+            
+            if result==500{
+                self.showAlert(title: "Firestore Error", message: "Error Transaction")
+                return
+            }else{
+                self.clearData()
+                self.showAlert(title: "Success", message: "Successfully Added")
+            }
             self.CategoryTbl.reloadData()
         }
+    }
+    
+    func showAlert(title:String,message:String){
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: .default, handler: nil))
+        self.present(alert, animated: true, completion: nil)
     }
 }
 
@@ -60,6 +83,19 @@ extension CategorSegmentController:UITableViewDataSource{
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return CategoryData.categoryList.count
     }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if (editingStyle == .delete) {
+            let result = FirebaseService().deleteCategory(categoryId: CategoryData.categoryList.remove(at: indexPath.row).categoryId) as! Bool
+            if result{
+                self.showAlert(title: "Success", message: "Category Successfully deleted")
+            }else{
+                self.showAlert(title: "Firestore Error", message: "Unable to delete category")
+            }
+        }
+    }
+    
+
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell:CategoryTableViewCells =  tableView.dequeueReusableCell(withIdentifier: "tblCategoryCell") as! CategoryTableViewCells
